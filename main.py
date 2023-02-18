@@ -1,3 +1,4 @@
+'''Functions about films and locations'''
 import math
 import argparse
 from geopy.exc import GeocoderUnavailable
@@ -24,7 +25,7 @@ def read_file(file: str) -> list:
                     line.remove('')
                 empty.append(line)
     return empty
-    
+
 def haversin_fopmula(location_film: tuple, location_user: tuple) -> float:
     '''
     The function calculates distance between user and film location
@@ -38,7 +39,7 @@ def haversin_fopmula(location_film: tuple, location_user: tuple) -> float:
     * math.cos(latitude_user) * math.sin(delta_longitude / 2) * math.sin(delta_longitude / 2)
     const_c = 2 * math.atan2(math.sqrt(const_a), math.sqrt(1 - const_a))
     return radius * const_c
-    
+
 def location(name: str) -> tuple:
     '''
     The function returns latitude and longtitude of the place
@@ -101,3 +102,5 @@ def map_creator(year, location_user, file_films):
         markers_counter += 1
         my_map.add_child(figure)
     my_map.save('map.html')
+
+map_creator(args.year, (args.location1, args.location2), args.file)
