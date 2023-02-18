@@ -38,3 +38,11 @@ def haversin_fopmula(location_film: tuple, location_user: tuple) -> float:
     * math.cos(latitude_user) * math.sin(delta_longitude / 2) * math.sin(delta_longitude / 2)
     const_c = 2 * math.atan2(math.sqrt(const_a), math.sqrt(1 - const_a))
     return radius * const_c
+    
+def location(name: str) -> tuple:
+    '''
+    The function returns latitude and longtitude of the place
+    '''
+    geolocator = Nominatim(user_agent="nominatim.openstreetmap.org")
+    location1 = geolocator.geocode(name)
+    return (location1.latitude, location1.longitude)
