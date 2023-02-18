@@ -1,3 +1,16 @@
+import math
+import argparse
+from geopy.exc import GeocoderUnavailable
+from geopy.geocoders import Nominatim
+import folium
+
+parser = argparse.ArgumentParser()
+parser.add_argument("year", type = int)
+parser.add_argument("location1", type = float)
+parser.add_argument("location2", type = float)
+parser.add_argument("file", type = str)
+args = parser.parse_args()
+
 def read_file(file: str) -> list:
     '''The function reads file'''
     empty = []
