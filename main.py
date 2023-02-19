@@ -1,6 +1,7 @@
-'''Functions about films and locations'''
+"""Functions about films and locations"""
 import math
 import argparse
+from geopy.extra.rate_limiter import RateLimiter
 from geopy.exc import GeocoderUnavailable
 from geopy.geocoders import Nominatim
 import folium
@@ -26,9 +27,14 @@ def read_file(file: str) -> list:
                 empty.append(line)
     return empty
 
+print(read_file('location2.list'))
 def haversin_fopmula(location_film: tuple, location_user: tuple) -> float:
     '''
     The function calculates distance between user and film location
+    >>> haversin_formula((35.1460249, -90.0517638), (49.163168, -123.137414))
+    3105600.0423169667
+    >>> haversin_fopmula((-22.9997404, -43.3659929), (34.0536909, -118.242766))
+    10133840.565664798
     '''
     radius = 6371e3
     latitude_film = location_film[0] * math.pi / 180
@@ -43,9 +49,14 @@ def haversin_fopmula(location_film: tuple, location_user: tuple) -> float:
 def location(name: str) -> tuple:
     '''
     The function returns latitude and longtitude of the place
+    >>> location('Новий Яричів')
+    (49.9071883, 24.3026191)
+    >>> location('Los Angeles')
+    (34.0536909, -118.242766)
     '''
     geolocator = Nominatim(user_agent="nominatim.openstreetmap.org")
     location1 = geolocator.geocode(name)
+    geocode = RateLimiter(geolocator.geocode, min_delay_seconds=1)
     return (location1.latitude, location1.longitude)
 
 def almost_main(location_user, year, file_films):
@@ -57,13 +68,11 @@ def almost_main(location_user, year, file_films):
             print(i[-1])
             try:
                 coordinates_list.append(location(i[-1]))
-            except AttributeError:
+            except (AttributeError, GeocoderUnavailable):
                 try:
                     coordinates_list.append(location(i[-1].split(',')[1:]))
-                except AttributeError:
+                except (AttributeError, GeocoderUnavailable):
                     coordinates_list.append(location(i[-1].split(',')[-1]))
-            except GeocoderUnavailable:
-                coordinates_list.append(location(i[-1].split(',')[1:]))
     distance_list = [[haversin_fopmula(i, location_user), i] for i in coordinates_list]
     return sorted(distance_list)
 
@@ -73,7 +82,8 @@ def map_creator(year, location_user, file_films):
     html = """<h4>{} рік</h4>
     Кількість знятих фільмів: {}
     """
-    figure = folium.FeatureGroup()
+    figure = folium.FeatureGroup(name = 'films locations')
+    figure2 = folium.FeatureGroup(name = 'the closest location')
     distance_list = almost_main(location_user, year, file_films)
     last_list = []
     for  element in distance_list:
@@ -87,7 +97,13 @@ def map_creator(year, location_user, file_films):
     if len(last_list) >= 10:
         last_list = last_list[:10]
 
-    for markers_counter, element in enumerate(last_list):
+    for markers_counter, _ in enumerate(last_list):
+        figure2.add_child(folium.CircleMarker(location = [last_list[0][0][1][0], last_list[0][0][1][1]],
+                                      radius=10,
+                                      popup='the closest location',
+                                      fill_color = 'red',
+                                      color = 'green',
+                                      fill_opacity=0.5))
         iframe = folium.IFrame(html=html.format(year, last_list[markers_counter][1]),
                           width=300,
                           height=100)
@@ -96,11 +112,10 @@ def map_creator(year, location_user, file_films):
                 last_list[markers_counter][0][1][1]],
                 popup=folium.Popup(iframe),
                 icon=folium.Icon(color = "green", icon = "fa-thin fa-camera-retro", prefix = 'fa')))
-
-        if markers_counter == len(last_list) - 1:
-            break
-        markers_counter += 1
         my_map.add_child(figure)
+        my_map.add_child(figure2)
+    my_map.add_child(folium.LayerControl())
     my_map.save('map.html')
 
 map_creator(args.year, (args.location1, args.location2), args.file)
+
